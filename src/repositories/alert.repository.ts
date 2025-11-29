@@ -1,77 +1,80 @@
-import { Alert, CreateAlertDto, AcknowledgeAlertDto } from '../types';
-import { seedAlerts } from '../data/seed.data';
+import type { Alert, CreateAlertDto, AcknowledgeAlertDto } from '../types';
+import { AlertModel } from '../models/alert.model';
 
 export class AlertRepository {
-  private alerts: Map<string, Alert>;
-
-  constructor() {
-    this.alerts = new Map();
-    this.initializeData();
+  async findAll(): Promise<Alert[]> {
+    const alerts = await AlertModel.find()
+      .sort({ timestamp: -1 })
+      .lean();
+    return alerts.map(this.mapToAlert);
   }
 
-  private initializeData(): void {
-    seedAlerts.forEach(alert => {
-      this.alerts.set(alert.id, { ...alert });
-    });
+  async findById(id: string): Promise<Alert | null> {
+    const alert = await AlertModel.findOne({ id }).lean();
+    return alert ? this.mapToAlert(alert) : null;
   }
 
-  findAll(): Alert[] {
-    return Array.from(this.alerts.values())
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  async findByResourceId(resourceId: string): Promise<Alert[]> {
+    const alerts = await AlertModel.find({ resourceId })
+      .sort({ timestamp: -1 })
+      .lean();
+    return alerts.map(this.mapToAlert);
   }
 
-  findById(id: string): Alert | undefined {
-    return this.alerts.get(id);
+  async findUnacknowledged(): Promise<Alert[]> {
+    const alerts = await AlertModel.find({ acknowledged: false })
+      .sort({ timestamp: -1 })
+      .lean();
+    return alerts.map(this.mapToAlert);
   }
 
-  findByResourceId(resourceId: string): Alert[] {
-    return Array.from(this.alerts.values())
-      .filter(alert => alert.resourceId === resourceId)
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  }
-
-  findUnacknowledged(): Alert[] {
-    return Array.from(this.alerts.values())
-      .filter(alert => !alert.acknowledged)
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  }
-
-  create(dto: CreateAlertDto): Alert {
-    const alert: Alert = {
+  async create(dto: CreateAlertDto): Promise<Alert> {
+    const alert = new AlertModel({
       id: `alert-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       ...dto,
       timestamp: new Date(),
       acknowledged: false,
+    });
+
+    const saved = await alert.save();
+    return this.mapToAlert(saved.toObject());
+  }
+
+  async acknowledge(id: string, dto: AcknowledgeAlertDto): Promise<Alert | null> {
+    const alert = await AlertModel.findOneAndUpdate(
+      { id },
+      {
+        acknowledged: true,
+        acknowledgedBy: dto.acknowledgedBy,
+        acknowledgedAt: new Date(),
+      },
+      { new: true }
+    ).lean();
+
+    return alert ? this.mapToAlert(alert) : null;
+  }
+
+  async delete(id: string): Promise<boolean> {
+    const result = await AlertModel.deleteOne({ id });
+    return result.deletedCount > 0;
+  }
+
+  async clearAcknowledged(): Promise<number> {
+    const result = await AlertModel.deleteMany({ acknowledged: true });
+    return result.deletedCount;
+  }
+
+  private mapToAlert(doc: any): Alert {
+    return {
+      id: doc.id,
+      resourceId: doc.resourceId,
+      resourceName: doc.resourceName,
+      level: doc.level,
+      message: doc.message,
+      timestamp: doc.timestamp,
+      acknowledged: doc.acknowledged,
+      acknowledgedBy: doc.acknowledgedBy,
+      acknowledgedAt: doc.acknowledgedAt,
     };
-
-    this.alerts.set(alert.id, alert);
-    return alert;
-  }
-
-  acknowledge(id: string, dto: AcknowledgeAlertDto): Alert | undefined {
-    const alert = this.alerts.get(id);
-    if (!alert) return undefined;
-
-    const updated: Alert = {
-      ...alert,
-      acknowledged: true,
-      acknowledgedBy: dto.acknowledgedBy,
-      acknowledgedAt: new Date(),
-    };
-
-    this.alerts.set(id, updated);
-    return updated;
-  }
-
-  delete(id: string): boolean {
-    return this.alerts.delete(id);
-  }
-
-  clearAcknowledged(): number {
-    const acknowledged = Array.from(this.alerts.values())
-      .filter(alert => alert.acknowledged);
-
-    acknowledged.forEach(alert => this.alerts.delete(alert.id));
-    return acknowledged.length;
   }
 }

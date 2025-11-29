@@ -1,93 +1,116 @@
-import { Resource, CreateResourceDto, UpdateResourceDto, ResourceHistory } from '../types';
-import { seedResources } from '../data/seed.data';
+import type { Resource, CreateResourceDto, UpdateResourceDto, ResourceHistory } from '../types';
+import { ResourceModel } from '../models/resource.model';
+import { ResourceHistoryModel } from '../models/resource-history.model';
 
 export class ResourceRepository {
-  private resources: Map<string, Resource>;
-  private history: ResourceHistory[];
-
-  constructor() {
-    this.resources = new Map();
-    this.history = [];
-    this.initializeData();
+  async findAll(): Promise<Resource[]> {
+    const resources = await ResourceModel.find().lean();
+    return resources.map(this.mapToResource);
   }
 
-  private initializeData(): void {
-    seedResources.forEach(resource => {
-      this.resources.set(resource.id, { ...resource });
-    });
+  async findById(id: string): Promise<Resource | null> {
+    const resource = await ResourceModel.findOne({ id }).lean();
+    return resource ? this.mapToResource(resource) : null;
   }
 
-  findAll(): Resource[] {
-    return Array.from(this.resources.values());
+  async findByType(type: string): Promise<Resource | null> {
+    const resource = await ResourceModel.findOne({ type }).lean();
+    return resource ? this.mapToResource(resource) : null;
   }
 
-  findById(id: string): Resource | undefined {
-    return this.resources.get(id);
-  }
-
-  findByType(type: string): Resource | undefined {
-    return Array.from(this.resources.values()).find(r => r.type === type);
-  }
-
-  create(dto: CreateResourceDto): Resource {
-    const resource: Resource = {
+  async create(dto: CreateResourceDto): Promise<Resource> {
+    const resource = new ResourceModel({
       id: `res-${dto.type}-${Date.now()}`,
       ...dto,
       lastUpdated: new Date(),
       trend: 'stable',
-    };
+    });
 
-    this.resources.set(resource.id, resource);
-    return resource;
+    const saved = await resource.save();
+    return this.mapToResource(saved.toObject());
   }
 
-  update(id: string, dto: UpdateResourceDto): Resource | undefined {
-    const resource = this.resources.get(id);
-    if (!resource) return undefined;
+  async update(id: string, dto: UpdateResourceDto): Promise<Resource | null> {
+    const resource = await ResourceModel.findOneAndUpdate(
+      { id },
+      {
+        ...dto,
+        lastUpdated: new Date()
+      },
+      { new: true }
+    ).lean();
 
-    const updated: Resource = {
-      ...resource,
-      ...dto,
-      lastUpdated: new Date(),
-    };
-
-    this.resources.set(id, updated);
+    if (!resource) return null;
 
     if (dto.currentLevel !== undefined) {
-      this.addHistory({
+      await this.addHistory({
         resourceId: id,
         timestamp: new Date(),
         level: dto.currentLevel,
       });
     }
 
-    return updated;
+    return this.mapToResource(resource);
   }
 
-  delete(id: string): boolean {
-    return this.resources.delete(id);
+  async delete(id: string): Promise<boolean> {
+    const result = await ResourceModel.deleteOne({ id });
+    await ResourceHistoryModel.deleteMany({ resourceId: id });
+    return result.deletedCount > 0;
   }
 
-  addHistory(entry: ResourceHistory): void {
-    this.history.push(entry);
+  async addHistory(entry: ResourceHistory): Promise<void> {
+    await ResourceHistoryModel.create({
+      resourceId: entry.resourceId,
+      timestamp: entry.timestamp,
+      level: entry.level,
+    });
 
     const maxHistoryPerResource = 1000;
-    const resourceHistory = this.history.filter(h => h.resourceId === entry.resourceId);
+    const count = await ResourceHistoryModel.countDocuments({ resourceId: entry.resourceId });
 
-    if (resourceHistory.length > maxHistoryPerResource) {
-      const toRemove = resourceHistory.length - maxHistoryPerResource;
-      this.history = this.history.filter(
-        h => h.resourceId !== entry.resourceId ||
-        resourceHistory.indexOf(h) >= toRemove
-      );
+    if (count > maxHistoryPerResource) {
+      const entriesToDelete = await ResourceHistoryModel
+        .find({ resourceId: entry.resourceId })
+        .sort({ timestamp: 1 })
+        .limit(count - maxHistoryPerResource)
+        .select('_id');
+
+      const idsToDelete = entriesToDelete.map(e => e._id);
+      await ResourceHistoryModel.deleteMany({ _id: { $in: idsToDelete } });
     }
   }
 
-  getHistory(resourceId: string, limit?: number): ResourceHistory[] {
-    const entries = this.history
-      .filter(h => h.resourceId === resourceId)
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  async getHistory(resourceId: string, limit?: number): Promise<ResourceHistory[]> {
+    const query = ResourceHistoryModel.find({ resourceId })
+      .sort({ timestamp: -1 });
 
-    return limit ? entries.slice(0, limit) : entries;
+    if (limit) {
+      query.limit(limit);
+    }
+
+    const entries = await query.lean();
+    return entries.map(entry => ({
+      resourceId: entry.resourceId,
+      timestamp: entry.timestamp,
+      level: entry.level,
+    }));
+  }
+
+  private mapToResource(doc: any): Resource {
+    return {
+      id: doc.id,
+      type: doc.type,
+      name: doc.name,
+      currentLevel: doc.currentLevel,
+      maxCapacity: doc.maxCapacity,
+      unit: doc.unit,
+      criticalThreshold: doc.criticalThreshold,
+      warningThreshold: doc.warningThreshold,
+      lastUpdated: doc.lastUpdated,
+      trend: doc.trend,
+      estimatedDaysRemaining: doc.estimatedDaysRemaining,
+      consumptionRate: doc.consumptionRate,
+    };
   }
 }

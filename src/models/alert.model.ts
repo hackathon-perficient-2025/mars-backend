@@ -63,18 +63,18 @@ const AlertSchema = new Schema<IAlert>(
     timestamps: true,
     toJSON: {
       virtuals: true,
+      versionKey: false,
       transform: function (_doc, ret) {
-        delete ret._id;
-        delete ret.__v;
-        return ret;
+        const { _id, __v, ...rest } = ret;
+        return rest;
       },
     },
     toObject: {
       virtuals: true,
+      versionKey: false,
       transform: function (_doc, ret) {
-        delete ret._id;
-        delete ret.__v;
-        return ret;
+        const { _id, __v, ...rest } = ret;
+        return rest;
       },
     },
   }

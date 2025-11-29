@@ -47,4 +47,5 @@ export interface UpdateResourceDto {
   maxCapacity?: number;
   criticalThreshold?: number;
   warningThreshold?: number;
+  trend?: 'increasing' | 'decreasing' | 'stable';
 }

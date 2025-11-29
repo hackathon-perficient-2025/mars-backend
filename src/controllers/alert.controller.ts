@@ -1,12 +1,12 @@
-import { Request, Response } from 'express';
-import { AlertService } from '../services';
+import type { Request, Response } from 'express';
+import type { AlertService } from '../services';
 
 export class AlertController {
   constructor(private alertService: AlertService) {}
 
   getAll = async (_req: Request, res: Response): Promise<void> => {
     try {
-      const alerts = this.alertService.getAllAlerts();
+      const alerts = await this.alertService.getAllAlerts();
       res.json(alerts);
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
@@ -15,7 +15,7 @@ export class AlertController {
 
   getById = async (req: Request, res: Response): Promise<void> => {
     try {
-      const alert = this.alertService.getAlertById(req.params.id);
+      const alert = await this.alertService.getAlertById(req.params.id);
       res.json(alert);
     } catch (error) {
       res.status(404).json({ error: (error as Error).message });
@@ -24,7 +24,7 @@ export class AlertController {
 
   getByResourceId = async (req: Request, res: Response): Promise<void> => {
     try {
-      const alerts = this.alertService.getAlertsByResourceId(req.params.resourceId);
+      const alerts = await this.alertService.getAlertsByResourceId(req.params.resourceId);
       res.json(alerts);
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
@@ -33,7 +33,7 @@ export class AlertController {
 
   getUnacknowledged = async (_req: Request, res: Response): Promise<void> => {
     try {
-      const alerts = this.alertService.getUnacknowledgedAlerts();
+      const alerts = await this.alertService.getUnacknowledgedAlerts();
       res.json(alerts);
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
@@ -42,7 +42,7 @@ export class AlertController {
 
   create = async (req: Request, res: Response): Promise<void> => {
     try {
-      const alert = this.alertService.createAlert(req.body);
+      const alert = await this.alertService.createAlert(req.body);
       res.status(201).json(alert);
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });
@@ -51,7 +51,7 @@ export class AlertController {
 
   acknowledge = async (req: Request, res: Response): Promise<void> => {
     try {
-      const alert = this.alertService.acknowledgeAlert(req.params.id, req.body);
+      const alert = await this.alertService.acknowledgeAlert(req.params.id, req.body);
       res.json(alert);
     } catch (error) {
       res.status(404).json({ error: (error as Error).message });
@@ -60,7 +60,7 @@ export class AlertController {
 
   delete = async (req: Request, res: Response): Promise<void> => {
     try {
-      this.alertService.deleteAlert(req.params.id);
+      await this.alertService.deleteAlert(req.params.id);
       res.status(204).send();
     } catch (error) {
       res.status(404).json({ error: (error as Error).message });
@@ -69,7 +69,7 @@ export class AlertController {
 
   clearAcknowledged = async (_req: Request, res: Response): Promise<void> => {
     try {
-      const count = this.alertService.clearAcknowledgedAlerts();
+      const count = await this.alertService.clearAcknowledgedAlerts();
       res.json({ deleted: count });
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });

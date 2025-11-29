@@ -16,6 +16,7 @@ export interface ResupplyRequest {
   approvedBy?: string;
   approvedAt?: Date;
   deliveredAt?: Date;
+  cancelledAt?: Date;
 }
 
 export interface CreateResupplyRequestDto {

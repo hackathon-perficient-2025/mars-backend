@@ -1,60 +1,60 @@
-import { ResupplyRepository } from '../repositories';
-import { ResupplyRequest, CreateResupplyRequestDto, UpdateResupplyRequestDto } from '../types';
+import type { ResupplyRepository } from '../repositories';
+import type { ResupplyRequest, CreateResupplyRequestDto, UpdateResupplyRequestDto } from '../types';
 
 export class ResupplyService {
   constructor(private resupplyRepository: ResupplyRepository) {}
 
-  getAllRequests(): ResupplyRequest[] {
-    return this.resupplyRepository.findAll();
+  async getAllRequests(): Promise<ResupplyRequest[]> {
+    return await this.resupplyRepository.findAll();
   }
 
-  getRequestById(id: string): ResupplyRequest {
-    const request = this.resupplyRepository.findById(id);
+  async getRequestById(id: string): Promise<ResupplyRequest> {
+    const request = await this.resupplyRepository.findById(id);
     if (!request) {
       throw new Error(`Resupply request with id ${id} not found`);
     }
     return request;
   }
 
-  getRequestsByStatus(status: string): ResupplyRequest[] {
-    return this.resupplyRepository.findByStatus(status);
+  async getRequestsByStatus(status: string): Promise<ResupplyRequest[]> {
+    return await this.resupplyRepository.findByStatus(status);
   }
 
-  getRequestsByResourceType(resourceType: string): ResupplyRequest[] {
-    return this.resupplyRepository.findByResourceType(resourceType);
+  async getRequestsByResourceType(resourceType: string): Promise<ResupplyRequest[]> {
+    return await this.resupplyRepository.findByResourceType(resourceType);
   }
 
-  createRequest(dto: CreateResupplyRequestDto): ResupplyRequest {
+  async createRequest(dto: CreateResupplyRequestDto): Promise<ResupplyRequest> {
     if (dto.quantity <= 0) {
       throw new Error('Quantity must be greater than 0');
     }
 
-    return this.resupplyRepository.create(dto);
+    return await this.resupplyRepository.create(dto);
   }
 
-  updateRequest(id: string, dto: UpdateResupplyRequestDto): ResupplyRequest {
-    const updated = this.resupplyRepository.update(id, dto);
+  async updateRequest(id: string, dto: UpdateResupplyRequestDto): Promise<ResupplyRequest> {
+    const updated = await this.resupplyRepository.update(id, dto);
     if (!updated) {
       throw new Error(`Resupply request with id ${id} not found`);
     }
     return updated;
   }
 
-  approveRequest(id: string, approvedBy: string): ResupplyRequest {
-    return this.updateRequest(id, {
+  async approveRequest(id: string, approvedBy: string): Promise<ResupplyRequest> {
+    return await this.updateRequest(id, {
       status: 'approved',
       approvedBy,
     });
   }
 
-  cancelRequest(id: string): ResupplyRequest {
-    return this.updateRequest(id, {
+  async cancelRequest(id: string): Promise<ResupplyRequest> {
+    return await this.updateRequest(id, {
       status: 'cancelled',
     });
   }
 
-  deleteRequest(id: string): void {
-    const deleted = this.resupplyRepository.delete(id);
+  async deleteRequest(id: string): Promise<void> {
+    const deleted = await this.resupplyRepository.delete(id);
     if (!deleted) {
       throw new Error(`Resupply request with id ${id} not found`);
     }

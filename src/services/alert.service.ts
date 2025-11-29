@@ -1,31 +1,31 @@
-import { AlertRepository } from '../repositories';
-import { Alert, CreateAlertDto, AcknowledgeAlertDto } from '../types';
+import type { AlertRepository } from '../repositories';
+import type { Alert, CreateAlertDto, AcknowledgeAlertDto } from '../types';
 
 export class AlertService {
   constructor(private alertRepository: AlertRepository) {}
 
-  getAllAlerts(): Alert[] {
-    return this.alertRepository.findAll();
+  async getAllAlerts(): Promise<Alert[]> {
+    return await this.alertRepository.findAll();
   }
 
-  getAlertById(id: string): Alert {
-    const alert = this.alertRepository.findById(id);
+  async getAlertById(id: string): Promise<Alert> {
+    const alert = await this.alertRepository.findById(id);
     if (!alert) {
       throw new Error(`Alert with id ${id} not found`);
     }
     return alert;
   }
 
-  getAlertsByResourceId(resourceId: string): Alert[] {
-    return this.alertRepository.findByResourceId(resourceId);
+  async getAlertsByResourceId(resourceId: string): Promise<Alert[]> {
+    return await this.alertRepository.findByResourceId(resourceId);
   }
 
-  getUnacknowledgedAlerts(): Alert[] {
-    return this.alertRepository.findUnacknowledged();
+  async getUnacknowledgedAlerts(): Promise<Alert[]> {
+    return await this.alertRepository.findUnacknowledged();
   }
 
-  createAlert(dto: CreateAlertDto): Alert {
-    const existingAlerts = this.alertRepository.findByResourceId(dto.resourceId);
+  async createAlert(dto: CreateAlertDto): Promise<Alert> {
+    const existingAlerts = await this.alertRepository.findByResourceId(dto.resourceId);
     const hasUnacknowledged = existingAlerts.some(
       alert => !alert.acknowledged && alert.level === dto.level
     );
@@ -34,25 +34,25 @@ export class AlertService {
       throw new Error(`Unacknowledged ${dto.level} alert already exists for this resource`);
     }
 
-    return this.alertRepository.create(dto);
+    return await this.alertRepository.create(dto);
   }
 
-  acknowledgeAlert(id: string, dto: AcknowledgeAlertDto): Alert {
-    const acknowledged = this.alertRepository.acknowledge(id, dto);
+  async acknowledgeAlert(id: string, dto: AcknowledgeAlertDto): Promise<Alert> {
+    const acknowledged = await this.alertRepository.acknowledge(id, dto);
     if (!acknowledged) {
       throw new Error(`Alert with id ${id} not found`);
     }
     return acknowledged;
   }
 
-  deleteAlert(id: string): void {
-    const deleted = this.alertRepository.delete(id);
+  async deleteAlert(id: string): Promise<void> {
+    const deleted = await this.alertRepository.delete(id);
     if (!deleted) {
       throw new Error(`Alert with id ${id} not found`);
     }
   }
 
-  clearAcknowledgedAlerts(): number {
-    return this.alertRepository.clearAcknowledged();
+  async clearAcknowledgedAlerts(): Promise<number> {
+    return await this.alertRepository.clearAcknowledged();
   }
 }

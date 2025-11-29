@@ -1,6 +1,6 @@
 import { Server as SocketServer } from 'socket.io';
-import { Server as HttpServer } from 'http';
-import { ResourceService, AlertService } from '../services';
+import type { Server as HttpServer } from 'http';
+import type { ResourceService, AlertService } from '../services';
 
 export class SocketHandler {
   private io: SocketServer;
@@ -23,13 +23,13 @@ export class SocketHandler {
   }
 
   private setupEventHandlers(): void {
-    this.io.on('connection', (socket) => {
+    this.io.on('connection', async (socket) => {
       console.log(`Client connected: ${socket.id}`);
 
-      const resources = this.resourceService.getAllResources();
+      const resources = await this.resourceService.getAllResources();
       socket.emit('resources:initial', resources);
 
-      const alerts = this.alertService.getAllAlerts();
+      const alerts = await this.alertService.getAllAlerts();
       socket.emit('alerts:initial', alerts);
 
       socket.on('disconnect', () => {
@@ -53,22 +53,33 @@ export class SocketHandler {
       clearInterval(this.updateInterval);
     }
 
-    this.updateInterval = setInterval(() => {
-      this.resourceService.simulateConsumption();
+    this.updateInterval = setInterval(async () => {
+      try {
+        await this.resourceService.simulateConsumption();
 
-      const resources = this.resourceService.getAllResources();
+        const resources = await this.resourceService.getAllResources();
 
-      resources.forEach((resource) => {
-        const trend = this.resourceService.calculateTrend(resource);
-        const updated = this.resourceService.updateResource(resource.id, { currentLevel: resource.currentLevel });
+        const updatePromises = resources.map(async (resource) => {
+          const trend = await this.resourceService.calculateTrend(resource);
+          const updated = await this.resourceService.updateResource(resource.id, {
+            currentLevel: resource.currentLevel,
+            trend
+          });
 
-        if (updated) {
-          updated.trend = trend;
-          this.io.to(`resource:${resource.id}`).emit('resource:updated', updated);
-        }
-      });
+          if (updated) {
+            this.io.to(`resource:${resource.id}`).emit('resource:updated', updated);
+          }
 
-      this.io.emit('resources:updated', resources);
+          return updated;
+        });
+
+        await Promise.all(updatePromises);
+
+        const updatedResources = await this.resourceService.getAllResources();
+        this.io.emit('resources:updated', updatedResources);
+      } catch (error) {
+        console.error('Error in resource update interval:', error);
+      }
     }, intervalMs);
 
     console.log(`Resource updates started (interval: ${intervalMs}ms)`);
@@ -79,31 +90,37 @@ export class SocketHandler {
       clearInterval(this.alertCheckInterval);
     }
 
-    this.alertCheckInterval = setInterval(() => {
-      const resources = this.resourceService.getAllResources();
+    this.alertCheckInterval = setInterval(async () => {
+      try {
+        const resources = await this.resourceService.getAllResources();
 
-      resources.forEach((resource) => {
-        const status = this.resourceService.getResourceStatus(resource);
+        const alertPromises = resources.map(async (resource) => {
+          const status = this.resourceService.getResourceStatus(resource);
 
-        if (status === 'critical') {
-          const existingAlerts = this.alertService.getAlertsByResourceId(resource.id);
-          const hasUnacknowledgedCritical = existingAlerts.some(
-            (alert) => !alert.acknowledged && alert.level === 'critical'
-          );
+          if (status === 'critical') {
+            const existingAlerts = await this.alertService.getAlertsByResourceId(resource.id);
+            const hasUnacknowledgedCritical = existingAlerts.some(
+              (alert) => !alert.acknowledged && alert.level === 'critical'
+            );
 
-          if (!hasUnacknowledgedCritical) {
-            const alert = this.alertService.createAlert({
-              resourceId: resource.id,
-              resourceName: resource.name,
-              level: 'critical',
-              message: `${resource.name} has reached critical level (${((resource.currentLevel / resource.maxCapacity) * 100).toFixed(1)}%). Immediate action required.`,
-            });
+            if (!hasUnacknowledgedCritical) {
+              const alert = await this.alertService.createAlert({
+                resourceId: resource.id,
+                resourceName: resource.name,
+                level: 'critical',
+                message: `${resource.name} has reached critical level (${((resource.currentLevel / resource.maxCapacity) * 100).toFixed(1)}%). Immediate action required.`,
+              });
 
-            this.io.emit('alert:created', alert);
-            console.log(`Critical alert created for ${resource.name}`);
+              this.io.emit('alert:created', alert);
+              console.log(`Critical alert created for ${resource.name}`);
+            }
           }
-        }
-      });
+        });
+
+        await Promise.all(alertPromises);
+      } catch (error) {
+        console.error('Error in alert check interval:', error);
+      }
     }, intervalMs);
 
     console.log(`Alert checks started (interval: ${intervalMs}ms)`);

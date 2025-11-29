@@ -1,50 +1,50 @@
-import { ResourceRepository } from '../repositories';
-import { Resource, CreateResourceDto, UpdateResourceDto, ResourceHistory } from '../types';
+import type { ResourceRepository } from '../repositories';
+import type { Resource, CreateResourceDto, UpdateResourceDto, ResourceHistory } from '../types';
 
 export class ResourceService {
   constructor(private resourceRepository: ResourceRepository) {}
 
-  getAllResources(): Resource[] {
-    return this.resourceRepository.findAll();
+  async getAllResources(): Promise<Resource[]> {
+    return await this.resourceRepository.findAll();
   }
 
-  getResourceById(id: string): Resource {
-    const resource = this.resourceRepository.findById(id);
+  async getResourceById(id: string): Promise<Resource> {
+    const resource = await this.resourceRepository.findById(id);
     if (!resource) {
       throw new Error(`Resource with id ${id} not found`);
     }
     return resource;
   }
 
-  getResourceByType(type: string): Resource {
-    const resource = this.resourceRepository.findByType(type);
+  async getResourceByType(type: string): Promise<Resource> {
+    const resource = await this.resourceRepository.findByType(type);
     if (!resource) {
       throw new Error(`Resource with type ${type} not found`);
     }
     return resource;
   }
 
-  createResource(dto: CreateResourceDto): Resource {
-    return this.resourceRepository.create(dto);
+  async createResource(dto: CreateResourceDto): Promise<Resource> {
+    return await this.resourceRepository.create(dto);
   }
 
-  updateResource(id: string, dto: UpdateResourceDto): Resource {
-    const updated = this.resourceRepository.update(id, dto);
+  async updateResource(id: string, dto: UpdateResourceDto): Promise<Resource> {
+    const updated = await this.resourceRepository.update(id, dto);
     if (!updated) {
       throw new Error(`Resource with id ${id} not found`);
     }
     return updated;
   }
 
-  deleteResource(id: string): void {
-    const deleted = this.resourceRepository.delete(id);
+  async deleteResource(id: string): Promise<void> {
+    const deleted = await this.resourceRepository.delete(id);
     if (!deleted) {
       throw new Error(`Resource with id ${id} not found`);
     }
   }
 
-  getResourceHistory(resourceId: string, limit?: number): ResourceHistory[] {
-    return this.resourceRepository.getHistory(resourceId, limit);
+  async getResourceHistory(resourceId: string, limit?: number): Promise<ResourceHistory[]> {
+    return await this.resourceRepository.getHistory(resourceId, limit);
   }
 
   getResourceStatus(resource: Resource): 'critical' | 'warning' | 'normal' | 'optimal' {
@@ -56,24 +56,26 @@ export class ResourceService {
     return 'normal';
   }
 
-  simulateConsumption(): void {
-    const resources = this.resourceRepository.findAll();
+  async simulateConsumption(): Promise<void> {
+    const resources = await this.resourceRepository.findAll();
 
-    resources.forEach(resource => {
+    const updatePromises = resources.map(async (resource) => {
       const consumptionRate = resource.consumptionRate || 0;
       const randomVariation = (Math.random() - 0.5) * (consumptionRate * 0.2);
       const consumption = consumptionRate / 288 + randomVariation;
 
       const newLevel = Math.max(0, resource.currentLevel - consumption);
 
-      this.resourceRepository.update(resource.id, {
+      await this.resourceRepository.update(resource.id, {
         currentLevel: parseFloat(newLevel.toFixed(2)),
       });
     });
+
+    await Promise.all(updatePromises);
   }
 
-  calculateTrend(resource: Resource): 'increasing' | 'decreasing' | 'stable' {
-    const history = this.resourceRepository.getHistory(resource.id, 10);
+  async calculateTrend(resource: Resource): Promise<'increasing' | 'decreasing' | 'stable'> {
+    const history = await this.resourceRepository.getHistory(resource.id, 10);
 
     if (history.length < 2) return 'stable';
 

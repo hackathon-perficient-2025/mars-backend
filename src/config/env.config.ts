@@ -6,6 +6,7 @@ export const config = {
   port: parseInt(process.env.PORT || '3000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
   corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  mongoUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/mars_cargo',
   resourceUpdateInterval: parseInt(process.env.RESOURCE_UPDATE_INTERVAL || '5000', 10),
   alertCheckInterval: parseInt(process.env.ALERT_CHECK_INTERVAL || '10000', 10),
 };

@@ -1,12 +1,12 @@
-import { Request, Response } from 'express';
-import { ResupplyService } from '../services';
+import type { Request, Response } from 'express';
+import type { ResupplyService } from '../services';
 
 export class ResupplyController {
   constructor(private resupplyService: ResupplyService) {}
 
   getAll = async (_req: Request, res: Response): Promise<void> => {
     try {
-      const requests = this.resupplyService.getAllRequests();
+      const requests = await this.resupplyService.getAllRequests();
       res.json(requests);
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
@@ -15,7 +15,7 @@ export class ResupplyController {
 
   getById = async (req: Request, res: Response): Promise<void> => {
     try {
-      const request = this.resupplyService.getRequestById(req.params.id);
+      const request = await this.resupplyService.getRequestById(req.params.id);
       res.json(request);
     } catch (error) {
       res.status(404).json({ error: (error as Error).message });
@@ -24,7 +24,7 @@ export class ResupplyController {
 
   getByStatus = async (req: Request, res: Response): Promise<void> => {
     try {
-      const requests = this.resupplyService.getRequestsByStatus(req.params.status);
+      const requests = await this.resupplyService.getRequestsByStatus(req.params.status);
       res.json(requests);
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
@@ -33,7 +33,7 @@ export class ResupplyController {
 
   getByResourceType = async (req: Request, res: Response): Promise<void> => {
     try {
-      const requests = this.resupplyService.getRequestsByResourceType(req.params.type);
+      const requests = await this.resupplyService.getRequestsByResourceType(req.params.type);
       res.json(requests);
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
@@ -42,7 +42,7 @@ export class ResupplyController {
 
   create = async (req: Request, res: Response): Promise<void> => {
     try {
-      const request = this.resupplyService.createRequest(req.body);
+      const request = await this.resupplyService.createRequest(req.body);
       res.status(201).json(request);
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });
@@ -51,7 +51,7 @@ export class ResupplyController {
 
   update = async (req: Request, res: Response): Promise<void> => {
     try {
-      const request = this.resupplyService.updateRequest(req.params.id, req.body);
+      const request = await this.resupplyService.updateRequest(req.params.id, req.body);
       res.json(request);
     } catch (error) {
       res.status(404).json({ error: (error as Error).message });
@@ -65,7 +65,7 @@ export class ResupplyController {
         res.status(400).json({ error: 'approvedBy is required' });
         return;
       }
-      const request = this.resupplyService.approveRequest(req.params.id, approvedBy);
+      const request = await this.resupplyService.approveRequest(req.params.id, approvedBy);
       res.json(request);
     } catch (error) {
       res.status(404).json({ error: (error as Error).message });
@@ -74,7 +74,7 @@ export class ResupplyController {
 
   cancel = async (req: Request, res: Response): Promise<void> => {
     try {
-      const request = this.resupplyService.cancelRequest(req.params.id);
+      const request = await this.resupplyService.cancelRequest(req.params.id);
       res.json(request);
     } catch (error) {
       res.status(404).json({ error: (error as Error).message });
@@ -83,7 +83,7 @@ export class ResupplyController {
 
   delete = async (req: Request, res: Response): Promise<void> => {
     try {
-      this.resupplyService.deleteRequest(req.params.id);
+      await this.resupplyService.deleteRequest(req.params.id);
       res.status(204).send();
     } catch (error) {
       res.status(404).json({ error: (error as Error).message });
