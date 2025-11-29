@@ -1,7 +1,8 @@
 import { ResourceModel } from '../models/resource.model';
 import { AlertModel } from '../models/alert.model';
 import { ResupplyRequestModel } from '../models/resupply.model';
-import { seedResources, seedAlerts, seedResupplyRequests } from './seed.data';
+import { Rover } from '../models/rover.model';
+import { seedResources, seedAlerts, seedResupplyRequests, seedRovers } from './seed.data';
 
 export class SeedService {
   async seedDatabase(): Promise<void> {
@@ -11,6 +12,7 @@ export class SeedService {
       await this.seedResources();
       await this.seedAlerts();
       await this.seedResupplyRequests();
+      await this.seedRovers();
 
       console.log('Database seeding completed successfully');
     } catch (error) {
@@ -81,12 +83,27 @@ export class SeedService {
     console.log(`Seeded ${requests.length} resupply requests`);
   }
 
+  private async seedRovers(): Promise<void> {
+    const existingCount = await Rover.countDocuments();
+
+    if (existingCount > 0) {
+      console.log(`Rovers already exist (${existingCount} found), skipping seed`);
+      return;
+    }
+
+    console.log('Seeding rovers...');
+
+    await Rover.insertMany(seedRovers);
+    console.log(`Seeded ${seedRovers.length} rovers`);
+  }
+
   async clearDatabase(): Promise<void> {
     console.log('Clearing database...');
 
     await ResourceModel.deleteMany({});
     await AlertModel.deleteMany({});
     await ResupplyRequestModel.deleteMany({});
+    await Rover.deleteMany({});
 
     console.log('Database cleared');
   }

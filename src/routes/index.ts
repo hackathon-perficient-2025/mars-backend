@@ -2,7 +2,9 @@ import { Router } from 'express';
 import { createResourceRoutes } from './resource.routes';
 import { createAlertRoutes } from './alert.routes';
 import { createResupplyRoutes } from './resupply.routes';
+import { createRoverRoutes } from './rover.routes';
 import { ResourceController, AlertController, ResupplyController } from '../controllers';
+import { RoverController } from '../controllers/rover.controller';
 
 /**
  * @swagger
@@ -22,13 +24,15 @@ import { ResourceController, AlertController, ResupplyController } from '../cont
 export function createApiRoutes(
   resourceController: ResourceController,
   alertController: AlertController,
-  resupplyController: ResupplyController
+  resupplyController: ResupplyController,
+  roverController: RoverController
 ): Router {
   const router = Router();
 
   router.use('/resources', createResourceRoutes(resourceController));
   router.use('/alerts', createAlertRoutes(alertController));
   router.use('/resupply', createResupplyRoutes(resupplyController));
+  router.use('/rovers', createRoverRoutes(roverController));
 
   router.get('/health', (_req, res) => {
     res.json({

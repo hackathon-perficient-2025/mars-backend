@@ -5,7 +5,9 @@ import { database } from './config/database.config';
 import { seedService } from './data/seed.service';
 import { SocketHandler } from './socket/socket.handler';
 import { ResourceService, AlertService } from './services';
+import { RoverService } from './services/rover.service';
 import { ResourceRepository, AlertRepository } from './repositories';
+import { RoverRepository } from './repositories/rover.repository';
 
 async function startServer(): Promise<void> {
   try {
@@ -20,18 +22,22 @@ async function startServer(): Promise<void> {
 
     const resourceRepository = new ResourceRepository();
     const alertRepository = new AlertRepository();
+    const roverRepository = new RoverRepository();
 
     const resourceService = new ResourceService(resourceRepository);
     const alertService = new AlertService(alertRepository);
+    const roverService = new RoverService(roverRepository);
 
     const socketHandler = new SocketHandler(
       httpServer,
       resourceService,
-      alertService
+      alertService,
+      roverService
     );
 
     socketHandler.startResourceUpdates(config.resourceUpdateInterval);
     socketHandler.startAlertChecks(config.alertCheckInterval);
+    socketHandler.startRoverUpdates(3000); // 3 second intervals for rovers
 
     httpServer.listen(config.port, () => {
       console.log('='.repeat(50));

@@ -6,8 +6,11 @@ import { swaggerSpec } from './config/swagger.config';
 import { createApiRoutes } from './routes';
 import { errorHandler, notFoundHandler, requestLogger } from './middleware';
 import { ResourceController, AlertController, ResupplyController } from './controllers';
+import { RoverController } from './controllers/rover.controller';
 import { ResourceService, AlertService, ResupplyService } from './services';
+import { RoverService } from './services/rover.service';
 import { ResourceRepository, AlertRepository, ResupplyRepository } from './repositories';
+import { RoverRepository } from './repositories/rover.repository';
 
 export function createApp(): Application {
   const app = express();
@@ -30,19 +33,23 @@ export function createApp(): Application {
   const resourceRepository = new ResourceRepository();
   const alertRepository = new AlertRepository();
   const resupplyRepository = new ResupplyRepository();
+  const roverRepository = new RoverRepository();
 
   const resourceService = new ResourceService(resourceRepository);
   const alertService = new AlertService(alertRepository);
   const resupplyService = new ResupplyService(resupplyRepository);
+  const roverService = new RoverService(roverRepository);
 
   const resourceController = new ResourceController(resourceService);
   const alertController = new AlertController(alertService);
   const resupplyController = new ResupplyController(resupplyService);
+  const roverController = new RoverController(roverService);
 
   app.use('/api', createApiRoutes(
     resourceController,
     alertController,
-    resupplyController
+    resupplyController,
+    roverController
   ));
 
   app.use(notFoundHandler);

@@ -1,16 +1,19 @@
 import { Server as SocketServer } from 'socket.io';
 import type { Server as HttpServer } from 'http';
 import type { ResourceService, AlertService } from '../services';
+import type { RoverService } from '../services/rover.service';
 
 export class SocketHandler {
   private io: SocketServer;
   private updateInterval?: NodeJS.Timeout;
   private alertCheckInterval?: NodeJS.Timeout;
+  private roverUpdateInterval?: NodeJS.Timeout;
 
   constructor(
     httpServer: HttpServer,
     private resourceService: ResourceService,
-    private alertService: AlertService
+    private alertService: AlertService,
+    private roverService: RoverService
   ) {
     this.io = new SocketServer(httpServer, {
       cors: {
@@ -31,6 +34,9 @@ export class SocketHandler {
 
       const alerts = await this.alertService.getAllAlerts();
       socket.emit('alerts:initial', alerts);
+
+      const rovers = await this.roverService.getAllRovers();
+      socket.emit('rovers:initial', rovers);
 
       socket.on('disconnect', () => {
         console.log(`Client disconnected: ${socket.id}`);
@@ -147,6 +153,25 @@ export class SocketHandler {
     this.io.emit('resupply:updated', request);
   }
 
+  startRoverUpdates(intervalMs: number = 3000): void {
+    if (this.roverUpdateInterval) {
+      clearInterval(this.roverUpdateInterval);
+    }
+
+    this.roverUpdateInterval = setInterval(async () => {
+      try {
+        await this.roverService.simulateRoverUpdates();
+
+        const rovers = await this.roverService.getAllRovers();
+        this.io.emit('rovers:updated', rovers);
+      } catch (error) {
+        console.error('Error in rover update interval:', error);
+      }
+    }, intervalMs);
+
+    console.log(`Rover updates started (interval: ${intervalMs}ms)`);
+  }
+
   stop(): void {
     if (this.updateInterval) {
       clearInterval(this.updateInterval);
@@ -154,6 +179,10 @@ export class SocketHandler {
 
     if (this.alertCheckInterval) {
       clearInterval(this.alertCheckInterval);
+    }
+
+    if (this.roverUpdateInterval) {
+      clearInterval(this.roverUpdateInterval);
     }
 
     this.io.close();
