@@ -2,18 +2,21 @@ import { Server as SocketServer } from 'socket.io';
 import type { Server as HttpServer } from 'http';
 import type { ResourceService, AlertService } from '../services';
 import type { RoverService } from '../services/rover.service';
+import type { AnalyticsService } from '../services/analytics.service';
 
 export class SocketHandler {
   private io: SocketServer;
   private updateInterval?: NodeJS.Timeout;
   private alertCheckInterval?: NodeJS.Timeout;
   private roverUpdateInterval?: NodeJS.Timeout;
+  private metricsCollectionInterval?: NodeJS.Timeout;
 
   constructor(
     httpServer: HttpServer,
     private resourceService: ResourceService,
     private alertService: AlertService,
-    private roverService: RoverService
+    private roverService: RoverService,
+    private analyticsService: AnalyticsService
   ) {
     this.io = new SocketServer(httpServer, {
       cors: {
@@ -172,6 +175,43 @@ export class SocketHandler {
     console.log(`Rover updates started (interval: ${intervalMs}ms)`);
   }
 
+  startMetricsCollection(intervalMs: number = 300000): void {
+    if (this.metricsCollectionInterval) {
+      clearInterval(this.metricsCollectionInterval);
+    }
+
+    // Collect initial metrics
+    this.collectMetrics();
+
+    this.metricsCollectionInterval = setInterval(async () => {
+      await this.collectMetrics();
+    }, intervalMs);
+
+    console.log(`Metrics collection started (interval: ${intervalMs}ms = ${intervalMs / 60000} minutes)`);
+  }
+
+  private async collectMetrics(): Promise<void> {
+    try {
+      const resources = await this.resourceService.getAllResources();
+
+      const metricPromises = resources.map(async (resource) => {
+        await this.analyticsService.recordMetric({
+          resourceId: resource.id,
+          resourceType: resource.type,
+          timestamp: new Date(),
+          level: resource.currentLevel,
+          consumptionRate: resource.consumptionRate || 0,
+          metadata: {},
+        });
+      });
+
+      await Promise.all(metricPromises);
+      console.log(`Collected metrics for ${resources.length} resources`);
+    } catch (error) {
+      console.error('Error collecting metrics:', error);
+    }
+  }
+
   stop(): void {
     if (this.updateInterval) {
       clearInterval(this.updateInterval);
@@ -183,6 +223,10 @@ export class SocketHandler {
 
     if (this.roverUpdateInterval) {
       clearInterval(this.roverUpdateInterval);
+    }
+
+    if (this.metricsCollectionInterval) {
+      clearInterval(this.metricsCollectionInterval);
     }
 
     this.io.close();

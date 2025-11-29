@@ -7,10 +7,13 @@ import { createApiRoutes } from './routes';
 import { errorHandler, notFoundHandler, requestLogger } from './middleware';
 import { ResourceController, AlertController, ResupplyController } from './controllers';
 import { RoverController } from './controllers/rover.controller';
+import { AnalyticsController } from './controllers/analytics.controller';
 import { ResourceService, AlertService, ResupplyService } from './services';
 import { RoverService } from './services/rover.service';
+import { AnalyticsService } from './services/analytics.service';
 import { ResourceRepository, AlertRepository, ResupplyRepository } from './repositories';
 import { RoverRepository } from './repositories/rover.repository';
+import { AnalyticsRepository } from './repositories/analytics.repository';
 
 export function createApp(): Application {
   const app = express();
@@ -34,22 +37,26 @@ export function createApp(): Application {
   const alertRepository = new AlertRepository();
   const resupplyRepository = new ResupplyRepository();
   const roverRepository = new RoverRepository();
+  const analyticsRepository = new AnalyticsRepository();
 
   const resourceService = new ResourceService(resourceRepository);
   const alertService = new AlertService(alertRepository);
   const resupplyService = new ResupplyService(resupplyRepository);
   const roverService = new RoverService(roverRepository);
+  const analyticsService = new AnalyticsService(analyticsRepository);
 
   const resourceController = new ResourceController(resourceService);
   const alertController = new AlertController(alertService);
   const resupplyController = new ResupplyController(resupplyService);
   const roverController = new RoverController(roverService);
+  const analyticsController = new AnalyticsController(analyticsService);
 
   app.use('/api', createApiRoutes(
     resourceController,
     alertController,
     resupplyController,
-    roverController
+    roverController,
+    analyticsController
   ));
 
   app.use(notFoundHandler);
