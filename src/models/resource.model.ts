@@ -1,5 +1,5 @@
-import mongoose, { Schema, Document } from 'mongoose';
-import type { ResourceType } from '../types/resource.types';
+import mongoose, { Schema, Document } from "mongoose";
+import type { ResourceType } from "../types/resource.types";
 
 export interface IResource extends Document {
   id: string;
@@ -11,7 +11,7 @@ export interface IResource extends Document {
   criticalThreshold: number;
   warningThreshold: number;
   lastUpdated: Date;
-  trend?: 'increasing' | 'decreasing' | 'stable';
+  trend?: "increasing" | "decreasing" | "stable";
   estimatedDaysRemaining?: number;
   consumptionRate?: number;
   createdAt: Date;
@@ -29,7 +29,22 @@ const ResourceSchema = new Schema<IResource>(
     type: {
       type: String,
       required: true,
-      enum: ['oxygen', 'water', 'spare_parts', 'food'],
+      enum: [
+        "oxygen",
+        "water",
+        "spare_parts",
+        "food",
+        "trees",
+        "solar_robots",
+        "energy_storage",
+        "medical_supplies",
+        "sewage_capacity",
+        "arable_land",
+        "pollinators",
+        "freshwater_aquifer",
+        "batteries",
+        "population",
+      ],
       index: true,
     },
     name: {
@@ -68,7 +83,7 @@ const ResourceSchema = new Schema<IResource>(
     },
     trend: {
       type: String,
-      enum: ['increasing', 'decreasing', 'stable'],
+      enum: ["increasing", "decreasing", "stable"],
     },
     estimatedDaysRemaining: {
       type: Number,
@@ -103,4 +118,7 @@ const ResourceSchema = new Schema<IResource>(
 ResourceSchema.index({ type: 1, currentLevel: 1 });
 ResourceSchema.index({ lastUpdated: -1 });
 
-export const ResourceModel = mongoose.model<IResource>('Resource', ResourceSchema);
+export const ResourceModel = mongoose.model<IResource>(
+  "Resource",
+  ResourceSchema
+);
