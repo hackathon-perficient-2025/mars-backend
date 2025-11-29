@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document } from "mongoose";
 
 export interface IResourceMetric extends Document {
   id: string;
@@ -19,8 +19,8 @@ export interface IAnomaly extends Document {
   resourceId: string;
   resourceType: string;
   timestamp: Date;
-  type: 'spike' | 'drop' | 'leak_detected' | 'unusual_pattern';
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  type: "spike" | "drop" | "leak_detected" | "unusual_pattern";
+  severity: "low" | "medium" | "high" | "critical";
   description: string;
   expectedValue: number;
   actualValue: number;
@@ -32,7 +32,7 @@ const ResourceMetricSchema = new Schema<IResourceMetric>(
     id: { type: String, required: true, unique: true, index: true },
     resourceId: { type: String, required: true, index: true },
     resourceType: { type: String, required: true, index: true },
-    timestamp: { type: Date, required: true, index: true },
+    timestamp: { type: Date, required: true },
     level: { type: Number, required: true },
     consumptionRate: { type: Number, required: true },
     metadata: {
@@ -67,16 +67,16 @@ const AnomalySchema = new Schema<IAnomaly>(
     id: { type: String, required: true, unique: true, index: true },
     resourceId: { type: String, required: true, index: true },
     resourceType: { type: String, required: true, index: true },
-    timestamp: { type: Date, required: true, index: true },
+    timestamp: { type: Date, required: true },
     type: {
       type: String,
       required: true,
-      enum: ['spike', 'drop', 'leak_detected', 'unusual_pattern'],
+      enum: ["spike", "drop", "leak_detected", "unusual_pattern"],
     },
     severity: {
       type: String,
       required: true,
-      enum: ['low', 'medium', 'high', 'critical'],
+      enum: ["low", "medium", "high", "critical"],
     },
     description: { type: String, required: true },
     expectedValue: { type: Number, required: true },
@@ -100,7 +100,7 @@ AnomalySchema.index({ resourceId: 1, timestamp: -1 });
 AnomalySchema.index({ severity: 1, timestamp: -1 });
 
 export const ResourceMetricModel = mongoose.model<IResourceMetric>(
-  'ResourceMetric',
+  "ResourceMetric",
   ResourceMetricSchema
 );
-export const AnomalyModel = mongoose.model<IAnomaly>('Anomaly', AnomalySchema);
+export const AnomalyModel = mongoose.model<IAnomaly>("Anomaly", AnomalySchema);

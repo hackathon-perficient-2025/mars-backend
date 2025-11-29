@@ -1,11 +1,17 @@
-import { ResourceMetricModel, AnomalyModel } from '../models/analytics.model';
-import type { ResourceMetric, Anomaly, AnalyticsQuery } from '../types/analytics.types';
-import { v4 as uuidv4 } from 'uuid';
+import { ResourceMetricModel, AnomalyModel } from "../models/analytics.model";
+import type {
+  ResourceMetric,
+  Anomaly,
+  AnalyticsQuery,
+} from "../types/analytics.types";
+import { randomUUID } from "crypto";
 
 export class AnalyticsRepository {
-  async createMetric(data: Omit<ResourceMetric, 'id'>): Promise<ResourceMetric> {
+  async createMetric(
+    data: Omit<ResourceMetric, "id">
+  ): Promise<ResourceMetric> {
     const metric = await ResourceMetricModel.create({
-      id: uuidv4(),
+      id: randomUUID(),
       ...data,
     });
     return this.mapToMetric(metric.toJSON());
@@ -38,10 +44,10 @@ export class AnalyticsRepository {
       if (timeRange && !startDate) {
         const now = new Date();
         const ranges = {
-          '24h': 24 * 60 * 60 * 1000,
-          '7d': 7 * 24 * 60 * 60 * 1000,
-          '30d': 30 * 24 * 60 * 60 * 1000,
-          '90d': 90 * 24 * 60 * 60 * 1000,
+          "24h": 24 * 60 * 60 * 1000,
+          "7d": 7 * 24 * 60 * 60 * 1000,
+          "30d": 30 * 24 * 60 * 60 * 1000,
+          "90d": 90 * 24 * 60 * 60 * 1000,
         };
         filter.timestamp.$gte = new Date(now.getTime() - ranges[timeRange]);
       }
@@ -55,9 +61,9 @@ export class AnalyticsRepository {
     return metrics.map(this.mapToMetric);
   }
 
-  async createAnomaly(data: Omit<Anomaly, 'id'>): Promise<Anomaly> {
+  async createAnomaly(data: Omit<Anomaly, "id">): Promise<Anomaly> {
     const anomaly = await AnomalyModel.create({
-      id: uuidv4(),
+      id: randomUUID(),
       ...data,
     });
     return this.mapToAnomaly(anomaly.toJSON());
@@ -90,10 +96,10 @@ export class AnalyticsRepository {
       if (timeRange && !startDate) {
         const now = new Date();
         const ranges = {
-          '24h': 24 * 60 * 60 * 1000,
-          '7d': 7 * 24 * 60 * 60 * 1000,
-          '30d': 30 * 24 * 60 * 60 * 1000,
-          '90d': 90 * 24 * 60 * 60 * 1000,
+          "24h": 24 * 60 * 60 * 1000,
+          "7d": 7 * 24 * 60 * 60 * 1000,
+          "30d": 30 * 24 * 60 * 60 * 1000,
+          "90d": 90 * 24 * 60 * 60 * 1000,
         };
         filter.timestamp.$gte = new Date(now.getTime() - ranges[timeRange]);
       }
