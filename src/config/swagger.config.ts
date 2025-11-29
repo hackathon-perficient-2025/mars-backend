@@ -53,7 +53,22 @@ const swaggerDefinition = {
           },
           type: {
             type: 'string',
-            enum: ['oxygen', 'water', 'spare_parts', 'food'],
+            enum: [
+              'oxygen',
+              'water',
+              'spare_parts',
+              'food',
+              'trees',
+              'solar_robots',
+              'energy_storage',
+              'medical_supplies',
+              'sewage_capacity',
+              'arable_land',
+              'pollinators',
+              'freshwater_aquifer',
+              'batteries',
+              'population',
+            ],
             description: 'Resource type',
           },
           name: {
@@ -97,8 +112,8 @@ const swaggerDefinition = {
             description: 'Resource trend',
           },
           estimatedDaysRemaining: {
-            type: 'number',
-            description: 'Estimated days until depletion',
+            type: ['number', 'null'],
+            description: 'Estimated days until depletion (null for resources with no depletion)',
             example: 45,
           },
           consumptionRate: {
@@ -114,7 +129,22 @@ const swaggerDefinition = {
         properties: {
           type: {
             type: 'string',
-            enum: ['oxygen', 'water', 'spare_parts', 'food'],
+            enum: [
+              'oxygen',
+              'water',
+              'spare_parts',
+              'food',
+              'trees',
+              'solar_robots',
+              'energy_storage',
+              'medical_supplies',
+              'sewage_capacity',
+              'arable_land',
+              'pollinators',
+              'freshwater_aquifer',
+              'batteries',
+              'population',
+            ],
           },
           name: {
             type: 'string',

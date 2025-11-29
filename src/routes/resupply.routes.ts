@@ -55,7 +55,7 @@ import { ResupplyController } from '../controllers';
  *         required: true
  *         schema:
  *           type: string
- *           enum: [oxygen, water, spare_parts, food]
+ *           enum: [oxygen, water, spare_parts, food, trees, solar_robots, energy_storage, medical_supplies, sewage_capacity, arable_land, pollinators, freshwater_aquifer, batteries, population]
  *         description: Resource type
  *     responses:
  *       200:

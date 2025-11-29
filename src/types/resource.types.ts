@@ -1,4 +1,18 @@
-export type ResourceType = 'oxygen' | 'water' | 'spare_parts' | 'food';
+export type ResourceType =
+  | 'oxygen'
+  | 'water'
+  | 'spare_parts'
+  | 'food'
+  | 'trees'
+  | 'solar_robots'
+  | 'energy_storage'
+  | 'medical_supplies'
+  | 'sewage_capacity'
+  | 'arable_land'
+  | 'pollinators'
+  | 'freshwater_aquifer'
+  | 'batteries'
+  | 'population';
 
 export interface Resource {
   id: string;
@@ -11,7 +25,7 @@ export interface Resource {
   warningThreshold: number;
   lastUpdated: Date;
   trend?: 'increasing' | 'decreasing' | 'stable';
-  estimatedDaysRemaining?: number;
+  estimatedDaysRemaining?: number | null;
   consumptionRate?: number;
 }
 
